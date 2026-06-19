@@ -45,8 +45,22 @@ export function linkify(text: string, candidates: LinkCandidate[], seriesId: str
   pairs.sort((a, b) => b.name.length - a.name.length);
   if (pairs.length === 0) return [{ text }];
 
-  const idByName = new Map(pairs.map((p) => [p.name.toLowerCase(), p.id]));
-  const re = new RegExp(`\\b(${pairs.map((p) => escapeRegex(p.name)).join("|")})\\b`, "gi");
+  // Group each lowercase surface form → set of entity ids.
+  // A name shared by two different entities is ambiguous and must not link.
+  const idsForName = new Map<string, Set<string>>();
+  for (const p of pairs) {
+    const key = p.name.toLowerCase();
+    const set = idsForName.get(key) ?? new Set<string>();
+    set.add(p.id);
+    idsForName.set(key, set);
+  }
+  const unambiguous = pairs.filter((p) => (idsForName.get(p.name.toLowerCase())?.size ?? 0) === 1);
+  if (unambiguous.length === 0) return [{ text }];
+
+  const idByName = new Map(unambiguous.map((p) => [p.name.toLowerCase(), p.id]));
+  // Unicode-aware word boundaries: use \p{L}\p{N}_ to handle non-ASCII letters (e.g. "Zoé").
+  const alternation = unambiguous.map((p) => escapeRegex(p.name)).join("|");
+  const re = new RegExp(`(?<![\\p{L}\\p{N}_])(${alternation})(?![\\p{L}\\p{N}_])`, "giu");
 
   const segments: Segment[] = [];
   const linked = new Set<string>();

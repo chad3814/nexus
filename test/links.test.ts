@@ -25,7 +25,9 @@ describe("candidatesInChapter", () => {
     expect(c).toEqual([{ id: "carl", names: ["Carl", "the cat"] }]);
   });
   it("excludes entities not in the chapter", () => {
-    expect(candidatesInChapter(entities, "B1·C1", "self").some((c) => c.id === "mord")).toBe(false);
+    expect(candidatesInChapter(entities, "B1·C1", "self")).toEqual([
+      { id: "carl", names: ["Carl", "the cat"] },
+    ]);
   });
 });
 
@@ -52,5 +54,25 @@ describe("linkify", () => {
   });
   it("returns a single plain segment when there are no candidates", () => {
     expect(linkify("Nobody here.", [], "dcc")).toEqual([{ text: "Nobody here." }]);
+  });
+  it("returns a single plain segment when candidates are present but none match", () => {
+    expect(linkify("Nobody here.", [{ id: "carl", names: ["Carl"] }], "dcc")).toEqual([
+      { text: "Nobody here." },
+    ]);
+  });
+  it("does not link an ambiguous name shared by two different entities", () => {
+    const ambigCands = [
+      { id: "sarge1", names: ["Sarge", "Sergeant Blake"] },
+      { id: "sarge2", names: ["Sarge", "Sergeant Hill"] },
+    ];
+    expect(linkify("Sarge nods.", ambigCands, "dcc")).toEqual([{ text: "Sarge nods." }]);
+  });
+  it("links a non-ASCII name at a word boundary", () => {
+    const segs = linkify("Then Zoé arrived.", [{ id: "z", names: ["Zoé"] }], "dcc");
+    expect(segs).toEqual([
+      { text: "Then " },
+      { text: "Zoé", href: "/dcc/entity/z/" },
+      { text: " arrived." },
+    ]);
   });
 });
