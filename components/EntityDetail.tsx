@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { anchorSortKey, buildSectionOrder, normalizeAnchor } from "@/lib/gating";
+import { candidatesInChapter, chapterOf, linkify } from "@/lib/links";
 import type { BookSections, Cutoff, DescriptionEvent, RegistryEntity } from "@/lib/types";
 
 interface EntityDetailProps {
@@ -8,6 +10,8 @@ interface EntityDetailProps {
   versions: DescriptionEvent[];
   cutoff: Cutoff;
   books?: BookSections[];
+  entities?: RegistryEntity[];
+  seriesId?: string;
 }
 
 /** Extract the "B·label" part (e.g. "B1·C3") from a full anchor. */
@@ -32,7 +36,7 @@ function sigClass(sig: string): string {
   return "border border-tag-border text-tag-ink font-mono text-xs px-2 py-0.5 rounded";
 }
 
-export default function EntityDetail({ entity, versions, cutoff, books }: EntityDetailProps) {
+export default function EntityDetail({ entity, versions, cutoff, books, entities = [], seriesId = "" }: EntityDetailProps) {
   const order = buildSectionOrder(books);
   const cmpAnchorStr = makeCmpAnchorStr(order);
 
@@ -55,6 +59,11 @@ export default function EntityDetail({ entity, versions, cutoff, books }: Entity
   // Sort versions chronologically for display
   const sortedVersions = [...versions].sort((a, b) => cmpAnchorStr(a.anchor, b.anchor));
 
+  const latestVersion = sortedVersions[sortedVersions.length - 1];
+  const descChapter = latestVersion ? chapterOf(latestVersion.anchor) : "";
+  const descCandidates = descChapter ? candidatesInChapter(entities, descChapter, entity.id) : [];
+  const descSegments = linkify(entity.description, descCandidates, seriesId);
+
   return (
     <article className="max-w-2xl mx-auto p-4 flex flex-col gap-6">
       {/* Header */}
@@ -72,7 +81,15 @@ export default function EntityDetail({ entity, versions, cutoff, books }: Entity
       {/* Current description */}
       <section>
         <h2 className="text-sm font-mono uppercase tracking-wide text-muted mb-1">Description</h2>
-        <p className="text-sm leading-relaxed text-ink">{entity.description}</p>
+        <p className="text-sm leading-relaxed text-ink">
+          {descSegments.map((s, i) =>
+            "href" in s ? (
+              <Link key={i} href={s.href} className="text-accent hover:underline">{s.text}</Link>
+            ) : (
+              <span key={i}>{s.text}</span>
+            ),
+          )}
+        </p>
       </section>
 
       {/* Aliases */}

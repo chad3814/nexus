@@ -102,7 +102,7 @@ export default function EntityView({ seriesId, entityId }: EntityViewProps) {
           ← Back to entity list
         </Link>
       </div>
-      <EntityDetail entity={entity} versions={versions} cutoff={cutoff} books={data.registry.books} />
+      <EntityDetail entity={entity} versions={versions} cutoff={cutoff} books={data.registry.books} entities={view.entities} seriesId={seriesId} />
     </main>
   );
 }

@@ -1,6 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import EntityDetail from "@/components/EntityDetail";
 import type { BookSections, DescriptionEvent, RegistryEntity } from "@/lib/types";
+
+const mk = (id: string, name: string, appearances: string[], description = ""): RegistryEntity => ({
+  id, canonicalName: name, aliases: [], type: "person", tags: [], significance: "minor",
+  description, firstAppearance: null, appearances,
+});
 
 // EntityDetail is a pure presentational component — no mocks needed.
 
@@ -96,6 +102,25 @@ describe("EntityDetail", () => {
     // Pass only the 2 in-cutoff versions (EntityView filters before passing)
     render(<EntityDetail entity={entity} versions={versions.slice(0, 2)} cutoff={cutoff} />);
     expect(screen.queryByText(/SPOILER: post-B2 description/)).not.toBeInTheDocument();
+  });
+});
+
+describe("EntityDetail cross-links", () => {
+  const subject = mk("donut", "Donut", ["B1·C1·¶1"], "Donut trusts Carl completely.");
+  const versions: DescriptionEvent[] = [
+    { id: "donut", anchor: "B1·C1·¶1", description: "Donut trusts Carl completely.", significance: "major" },
+  ];
+  const entities = [subject, mk("carl", "Carl", ["B1·C1·¶3"]), mk("far", "Faraway", ["B5·C1·¶1"])];
+
+  it("links a co-located mentioned entity to its page", () => {
+    render(<EntityDetail entity={subject} versions={versions} cutoff="" books={[]} entities={entities} seriesId="dcc" />);
+    const link = screen.getByRole("link", { name: "Carl" });
+    expect(link).toHaveAttribute("href", "/dcc/entity/carl/");
+  });
+
+  it("does not link the subject itself", () => {
+    render(<EntityDetail entity={subject} versions={versions} cutoff="" books={[]} entities={entities} seriesId="dcc" />);
+    expect(screen.queryByRole("link", { name: "Donut" })).toBeNull();
   });
 });
 
