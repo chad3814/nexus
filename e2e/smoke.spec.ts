@@ -20,8 +20,8 @@ test.describe("DCC spoiler-gating smoke", () => {
     await page.goto("/dcc/");
     await expect(page.getByText("Where are you")).toBeVisible();
 
-    // Select Book 1
-    await page.selectOption("#book-select", { label: "Book 1" });
+    // Select Book 1 (by value — option label is now "1 · Dungeon Crawler Carl")
+    await page.selectOption("#book-select", { value: "1" });
     // Select C1
     await page.selectOption("#chapter-select", { label: "C1" });
     await page.getByRole("button", { name: "Set position" }).click();
