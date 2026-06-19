@@ -46,8 +46,12 @@ static JSON and computes the gated view in the browser.
 
 ## Architecture
 
-A standalone public repo. Next.js App Router, `output: 'export'`, deployable to any static
-host (GitHub Pages / Vercel / Cloudflare Pages). The browser fetches the static JSON for a
+A standalone public repo. Next.js App Router, `output: 'export'`, deployed to **GitHub
+Pages**. Because the site is served at the root of the custom domain **casefiles.nexus**, no
+`basePath`/`assetPrefix` is needed; the export includes a `CNAME` (casefiles.nexus) and a
+`.nojekyll` file (so Pages serves Next's `_next/` directories), and deploy is via a **GitHub
+Actions workflow** (build the static export → publish to Pages). The browser fetches the
+static JSON for a
 series once (on first position-set) and runs the gating engine client-side; changing the
 reading position re-gates instantly with no network round-trip.
 
@@ -153,7 +157,5 @@ full-text reproduction (only the existing short snippets and derived description
 
 - Create `github.com/chad3814/nexus` (public) and push — at implementation time, with
   explicit go-ahead.
-- Hosting target (GitHub Pages vs Vercel vs Cloudflare Pages) — decide during implementation;
-  all work with a static export.
 - Visual design/layout details (index density, entity-page layout) — refine during
   implementation; a visual companion can help if useful.
