@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anchorSortKey, deriveBooks, viewAt, withinCutoff } from "@/lib/gating";
+import { anchorSortKey, buildSectionOrder, cmpAnchor, deriveBooks, viewAt, withinCutoff } from "@/lib/gating";
 import type { Registry } from "@/lib/types";
 
 const reg: Registry = {
@@ -104,5 +104,35 @@ describe("deriveBooks", () => {
       { number: 1, chapters: ["C1"] },
       { number: 2, chapters: ["C1", "C3"] },
     ]);
+  });
+});
+
+const order = buildSectionOrder([
+  { number: 7, sections: ["Prologue", "C1", "C2", "Part89", "C3"] }, // Part89 is mid/late, not front
+  { number: 8, sections: ["Interlude", "C1", "Interlude-2", "C2"] },
+]);
+
+describe("order-aware gating", () => {
+  it("excludes a late section at an early cutoff (the Part89 leak)", () => {
+    expect(withinCutoff("B7·Part89·¶1", "B7·C1", order)).toBe(false);
+    expect(withinCutoff("B7·Part89·¶1", "B7·C1")).toBe(true); // heuristic (-1) would wrongly include it
+  });
+
+  it("sorts an interlude between its surrounding chapters", () => {
+    expect(cmpAnchor("B8·C1·¶1", "B8·Interlude-2·¶1", order)).toBeLessThan(0);
+    expect(cmpAnchor("B8·Interlude-2·¶1", "B8·C2·¶1", order)).toBeLessThan(0);
+  });
+
+  it("viewAt builds the order from registry.books (entity in a late section hidden early)", () => {
+    const reg: Registry = {
+      booksProcessed: [7],
+      books: [{ number: 7, sections: ["Prologue", "C1", "C2", "Part89", "C3"] }],
+      entities: [{
+        id: "x", canonicalName: "X", aliases: [], type: "person", tags: [], significance: "minor",
+        description: "", firstAppearance: null, appearances: ["B7·Part89·¶1"],
+      }],
+    };
+    expect(viewAt(reg, { through: "B7·C1" }).entities).toHaveLength(0);
+    expect(viewAt(reg, { through: "B7·C3" }).entities).toHaveLength(1);
   });
 });

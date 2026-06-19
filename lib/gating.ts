@@ -1,4 +1,4 @@
-import type { AliasEvent, Cutoff, DescriptionEvent, Registry, RegistryEntity } from "@/lib/types";
+import type { AliasEvent, BookSections, Cutoff, DescriptionEvent, Registry, RegistryEntity } from "@/lib/types";
 
 export function normalizeName(name: string): string {
   return name.toLowerCase().replace(/[''']/g, "").replace(/[^a-z0-9]+/g, " ").trim();
@@ -10,34 +10,43 @@ export function normalizeAnchor(anchor: string): string {
   return m ? m[0] : anchor.replace(/[[\]\s]/g, "");
 }
 
+export interface SectionOrder { ordinal(book: number, label: string): number | undefined; }
+
+export function buildSectionOrder(books?: BookSections[]): SectionOrder {
+  const map = new Map<string, number>();
+  for (const b of books ?? []) b.sections.forEach((label, i) => map.set(`${b.number}·${label}`, i));
+  return { ordinal: (book, label) => map.get(`${book}·${label}`) };
+}
+
+function heuristicSectionOrder(label: string): number {
+  if (/^C\d+$/i.test(label)) return Number.parseInt(label.slice(1), 10);
+  if (/^Part\d+$/i.test(label)) return -1;
+  const special: Record<string, number> = { epigraph: -4, prologue: -3, interlude: -2, epilogue: 9000 };
+  return special[label.toLowerCase()] ??
+    (/^Sec\d+/i.test(label) ? 10000 + (Number.parseInt(label.replace(/\D/g, ""), 10) || 0) : 8000);
+}
+
 /** Reading-order sort key: [book, sectionOrder, paragraph]. */
-export function anchorSortKey(anchor: string): [number, number, number] {
+export function anchorSortKey(anchor: string, order?: SectionOrder): [number, number, number] {
   const parts = normalizeAnchor(anchor).split("·");
   const book = Number.parseInt((parts[0] ?? "").replace(/\D/g, ""), 10) || 0;
   const label = parts[1] ?? "";
   const para = Number.parseInt((parts[2] ?? "").replace(/\D/g, ""), 10) || 0;
-  let order: number;
-  if (/^C\d+$/i.test(label)) order = Number.parseInt(label.slice(1), 10);
-  else if (/^Part\d+$/i.test(label)) order = -1;
-  else {
-    const special: Record<string, number> = { epigraph: -4, prologue: -3, interlude: -2, epilogue: 9000 };
-    order = special[label.toLowerCase()] ??
-      (/^Sec\d+/i.test(label) ? 10000 + (Number.parseInt(label.replace(/\D/g, ""), 10) || 0) : 8000);
-  }
-  return [book, order, para];
+  const sec = order?.ordinal(book, label) ?? heuristicSectionOrder(label);
+  return [book, sec, para];
 }
 
-export function cmpAnchor(a: string, b: string): number {
-  const ka = anchorSortKey(a);
-  const kb = anchorSortKey(b);
+export function cmpAnchor(a: string, b: string, order?: SectionOrder): number {
+  const ka = anchorSortKey(a, order);
+  const kb = anchorSortKey(b, order);
   return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
 }
 
 /** Inclusive: a chapter cutoff ("B2·C4") includes the whole chapter; no cutoff ⇒ always true. */
-export function withinCutoff(anchor: string, cutoff?: Cutoff): boolean {
+export function withinCutoff(anchor: string, cutoff?: Cutoff, order?: SectionOrder): boolean {
   if (!cutoff) return true;
-  const a = anchorSortKey(anchor);
-  const k = anchorSortKey(cutoff);
+  const a = anchorSortKey(anchor, order);
+  const k = anchorSortKey(cutoff, order);
   const cutoffPara = cutoff.includes("¶") ? k[2] : Number.POSITIVE_INFINITY;
   if (a[0] !== k[0]) return a[0] < k[0];
   if (a[1] !== k[1]) return a[1] < k[1];
@@ -57,8 +66,8 @@ export function cleanAliases(canonicalName: string, aliases: string[]): string[]
   return out;
 }
 
-function sortAnchors(anchors: string[]): string[] {
-  return [...anchors].map(normalizeAnchor).sort(cmpAnchor);
+function sortAnchors(anchors: string[], order?: SectionOrder): string[] {
+  return [...anchors].map(normalizeAnchor).sort((a, b) => cmpAnchor(a, b, order));
 }
 
 /**
@@ -73,26 +82,27 @@ export function viewAt(
   opts: { through?: Cutoff; descriptions?: DescriptionEvent[]; aliases?: AliasEvent[] } = {},
 ): Registry {
   const { through, descriptions, aliases } = opts;
+  const order = buildSectionOrder(registry.books);
 
   const descLatest = new Map<string, DescriptionEvent>();
   const descProcessed = new Set<string>();
   for (const ev of descriptions ?? []) {
     descProcessed.add(ev.id);
-    if (!withinCutoff(ev.anchor, through)) continue;
+    if (!withinCutoff(ev.anchor, through, order)) continue;
     const cur = descLatest.get(ev.id);
-    if (!cur || cmpAnchor(ev.anchor, cur.anchor) > 0) descLatest.set(ev.id, ev);
+    if (!cur || cmpAnchor(ev.anchor, cur.anchor, order) > 0) descLatest.set(ev.id, ev);
   }
   const aliasCollect = new Map<string, string[]>();
   const aliasProcessed = new Set<string>();
   for (const ev of aliases ?? []) {
     aliasProcessed.add(ev.id);
-    if (!withinCutoff(ev.anchor, through)) continue;
+    if (!withinCutoff(ev.anchor, through, order)) continue;
     (aliasCollect.get(ev.id) ?? aliasCollect.set(ev.id, []).get(ev.id)!).push(ev.alias);
   }
 
   const entities: RegistryEntity[] = [];
   for (const e of registry.entities) {
-    const kept = sortAnchors(e.appearances.filter((a) => withinCutoff(a, through)));
+    const kept = sortAnchors(e.appearances.filter((a) => withinCutoff(a, through, order)), order);
     if (kept.length === 0) continue; // earliest appearance is after the cutoff → not introduced yet
     const next: RegistryEntity = { ...e, appearances: kept };
     // Fix firstAppearance to the earliest kept appearance
@@ -117,7 +127,7 @@ export function viewAt(
     entities.push(next);
   }
   entities.sort((a, b) => a.canonicalName.localeCompare(b.canonicalName));
-  const booksProcessed = [...new Set(entities.flatMap((e) => e.appearances).map((a) => anchorSortKey(a)[0]))].sort((x, y) => x - y);
+  const booksProcessed = [...new Set(entities.flatMap((e) => e.appearances).map((a) => anchorSortKey(a, order)[0]))].sort((x, y) => x - y);
   return { booksProcessed, entities };
 }
 
