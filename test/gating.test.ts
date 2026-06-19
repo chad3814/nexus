@@ -50,6 +50,51 @@ describe("viewAt", () => {
     expect(carl.aliases).toContain("Crawler #4,122");
     expect(carl.appearances).toEqual(["B1·C1·¶1", "B2·C3·¶5"]);
   });
+  it("re-derives firstAppearance to the earliest kept appearance", () => {
+    // Entity with firstAppearance at a later anchor than its earliest appearance
+    const testReg: Registry = {
+      booksProcessed: [1],
+      entities: [
+        {
+          id: "test-entity",
+          canonicalName: "Test Entity",
+          aliases: [],
+          type: "person",
+          tags: ["in_world"],
+          significance: "major",
+          description: "blob",
+          firstAppearance: { anchor: "B1·C3·¶9", snippet: "later" },
+          appearances: ["B1·C1·¶1", "B1·C3·¶9"],
+        },
+      ],
+    };
+    const v = viewAt(testReg, { through: "B1·C99" });
+    const entity = v.entities.find((e) => e.id === "test-entity")!;
+    expect(entity.firstAppearance).toEqual({ anchor: "B1·C1·¶1", snippet: "" });
+  });
+  it("blanks description when processed but no visible event <= cutoff", () => {
+    // Entity with a description event only after cutoff, but with appearance before cutoff
+    const testReg: Registry = {
+      booksProcessed: [1, 2],
+      entities: [
+        {
+          id: "late-desc",
+          canonicalName: "Late Description Entity",
+          aliases: [],
+          type: "person",
+          tags: ["in_world"],
+          significance: "major",
+          description: "blob",
+          firstAppearance: { anchor: "B1·C1·¶1", snippet: "" },
+          appearances: ["B1·C1·¶1"],
+        },
+      ],
+    };
+    const descEventsLateOnly = [{ id: "late-desc", anchor: "B2·C1·¶1", description: "After cutoff", significance: "minor" as const }];
+    const v = viewAt(testReg, { through: "B1·C99", descriptions: descEventsLateOnly });
+    const entity = v.entities.find((e) => e.id === "late-desc")!;
+    expect(entity.description).toBe(""); // processed but no event <= cutoff
+  });
 });
 
 describe("deriveBooks", () => {

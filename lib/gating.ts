@@ -95,6 +95,17 @@ export function viewAt(
     const kept = sortAnchors(e.appearances.filter((a) => withinCutoff(a, through)));
     if (kept.length === 0) continue; // earliest appearance is after the cutoff → not introduced yet
     const next: RegistryEntity = { ...e, appearances: kept };
+    // Fix firstAppearance to the earliest kept appearance
+    const earliestKept = kept[0];
+    next.firstAppearance = earliestKept
+      ? {
+          anchor: earliestKept,
+          snippet:
+            e.firstAppearance && normalizeAnchor(e.firstAppearance.anchor) === earliestKept
+              ? e.firstAppearance.snippet
+              : "",
+        }
+      : null;
     if (descProcessed.has(e.id)) {
       const ev = descLatest.get(e.id);
       next.description = ev ? ev.description : "";
