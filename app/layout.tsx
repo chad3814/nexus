@@ -36,7 +36,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <footer className="mt-auto py-4 text-center text-sm text-muted font-mono">
-          Unofficial fan project. Dungeon Crawler Carl © Matt Dinniman.
+          Unofficial fan projects. All book excerpts are copyrighted work of their respective authors.
         </footer>
       </body>
     </html>
