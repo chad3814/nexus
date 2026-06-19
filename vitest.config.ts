@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
-  test: { environment: "jsdom", setupFiles: ["./vitest.setup.ts"], globals: true, passWithNoTests: true },
+  test: { environment: "jsdom", setupFiles: ["./vitest.setup.ts"], globals: true, passWithNoTests: true, exclude: ["e2e/**", "**/node_modules/**"] },
   resolve: {
     alias: {
       "@": new URL(".", import.meta.url).pathname,
