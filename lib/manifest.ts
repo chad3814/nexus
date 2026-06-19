@@ -5,5 +5,8 @@ export function buildSeriesManifest(
   meta: { id: string; title: string; author: string },
   registry: Registry,
 ): SeriesManifest {
-  return { ...meta, books: deriveBooks(registry) };
+  const books = registry.books
+    ? registry.books.map((b) => ({ number: b.number, chapters: b.sections }))
+    : deriveBooks(registry);
+  return { ...meta, books };
 }
