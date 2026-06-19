@@ -24,4 +24,11 @@ describe("buildSeriesManifest", () => {
     };
     expect(buildSeriesManifest(meta, reg).books).toEqual([{ number: 1, chapters: ["C1", "C2"] }]);
   });
+
+  it("carries book titles from registry.books", () => {
+    const reg = { booksProcessed: [2], entities: [], books: [{ number: 2, title: "Carl's Doomsday Scenario", sections: ["C1"] }] } as Registry;
+    expect(buildSeriesManifest({ id: "dcc", title: "DCC", author: "MD" }, reg).books[0]).toEqual({
+      number: 2, title: "Carl's Doomsday Scenario", chapters: ["C1"],
+    });
+  });
 });

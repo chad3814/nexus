@@ -9,10 +9,12 @@ export function parseCutoff(s: string | null): Cutoff | null {
   return /^B\d+·\S+$/.test(s) ? s : null;
 }
 
-export function formatCutoff(c: Cutoff): string {
+export function formatCutoff(c: Cutoff, books?: Array<{ number: number; title?: string }>): string {
   if (c === FULL_SERIES) return "Everything";
   const [book, label] = c.split("·");
-  return `Book ${book.replace("B", "")} · ${label}`;
+  const n = Number.parseInt(book.replace("B", ""), 10);
+  const title = books?.find((b) => b.number === n)?.title;
+  return `${title ?? `Book ${n}`} · ${label}`;
 }
 
 /** The value to pass to viewAt as `through`: undefined for full series, else the cutoff. */

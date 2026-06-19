@@ -14,6 +14,20 @@ describe("cutoff parse/format", () => {
   });
 });
 
+describe("formatCutoff with titles", () => {
+  const books = [{ number: 2, title: "Carl's Doomsday Scenario" }, { number: 3 }];
+  it("uses the title alone when present", () => {
+    expect(formatCutoff("B2·C5", books)).toBe("Carl's Doomsday Scenario · C5");
+  });
+  it("falls back to Book N when no title / no books", () => {
+    expect(formatCutoff("B3·C5", books)).toBe("Book 3 · C5");
+    expect(formatCutoff("B4·C1")).toBe("Book 4 · C1");
+  });
+  it("still returns Everything for full series", () => {
+    expect(formatCutoff("__all__")).toBe("Everything");
+  });
+});
+
 describe("localStorage position (per series)", () => {
   beforeEach(() => localStorage.clear());
   it("writes and reads per series", () => {

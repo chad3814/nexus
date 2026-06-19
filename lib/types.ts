@@ -13,7 +13,7 @@ export interface RegistryEntity {
   firstAppearance: Appearance | null;
   appearances: string[];
 }
-export interface BookSections { number: number; sections: string[]; }
+export interface BookSections { number: number; title?: string; sections: string[]; }
 export interface Registry { booksProcessed: number[]; entities: RegistryEntity[]; books?: BookSections[]; }
 export interface DescriptionEvent { id: string; anchor: string; description: string; significance: Significance; }
 export interface AliasEvent { id: string; anchor: string; alias: string; }
@@ -22,5 +22,5 @@ export interface SeriesManifest {
   id: string;
   title: string;
   author: string;
-  books: Array<{ number: number; chapters: string[] }>;
+  books: Array<{ number: number; title?: string; chapters: string[] }>;
 }

@@ -38,7 +38,7 @@ export function PositionPicker({ manifest, onChoose }: PositionPickerProps) {
           >
             {manifest.books.map((b) => (
               <option key={b.number} value={b.number}>
-                Book {b.number}
+                {b.number} · {b.title ?? `Book ${b.number}`}
               </option>
             ))}
           </select>
