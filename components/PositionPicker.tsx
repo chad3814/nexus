@@ -25,14 +25,14 @@ export function PositionPicker({ manifest, onChoose }: PositionPickerProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <h2 className="text-lg font-semibold">Where are you in {manifest.title}?</h2>
+    <div className="flex flex-col gap-4 p-6 bg-surface border border-border">
+      <h2 className="text-lg font-mono text-ink">Where are you in {manifest.title}?</h2>
       <div className="flex flex-col gap-3">
         <div className="flex gap-2 items-center">
-          <label htmlFor="book-select" className="w-16 text-sm font-medium">Book</label>
+          <label htmlFor="book-select" className="w-16 text-sm font-medium text-ink">Book</label>
           <select
             id="book-select"
-            className="border rounded px-2 py-1 text-sm"
+            className="bg-surface border border-border rounded px-2 py-1 text-sm text-ink"
             value={bookNum}
             onChange={(e) => handleBookChange(Number(e.target.value))}
           >
@@ -44,10 +44,10 @@ export function PositionPicker({ manifest, onChoose }: PositionPickerProps) {
           </select>
         </div>
         <div className="flex gap-2 items-center">
-          <label htmlFor="chapter-select" className="w-16 text-sm font-medium">Chapter</label>
+          <label htmlFor="chapter-select" className="w-16 text-sm font-medium text-ink">Chapter</label>
           <select
             id="chapter-select"
-            className="border rounded px-2 py-1 text-sm"
+            className="bg-surface border border-border rounded px-2 py-1 text-sm text-ink"
             value={chapter}
             onChange={(e) => setChapter(e.target.value)}
           >
@@ -58,7 +58,7 @@ export function PositionPicker({ manifest, onChoose }: PositionPickerProps) {
         </div>
         <button
           type="button"
-          className="self-start px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+          className="self-start px-4 py-2 bg-accent text-accent-ink rounded text-sm font-mono hover:opacity-90"
           onClick={handleSubmit}
         >
           Set position
@@ -66,7 +66,7 @@ export function PositionPicker({ manifest, onChoose }: PositionPickerProps) {
       </div>
       <button
         type="button"
-        className="self-start text-sm text-zinc-500 underline hover:text-zinc-700"
+        className="self-start text-sm text-accent underline hover:opacity-80"
         onClick={() => onChoose(FULL_SERIES)}
       >
         I&apos;ve finished — show everything

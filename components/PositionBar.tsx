@@ -10,11 +10,13 @@ interface PositionBarProps {
 
 export function PositionBar({ current, onChangePicker }: PositionBarProps) {
   return (
-    <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-zinc-50 border-b text-sm">
-      <span className="font-medium">Reading through: {formatCutoff(current)}</span>
+    <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-surface border-b border-border text-sm">
+      <span className="font-mono text-ink">
+        THROUGH <span className="text-accent">{formatCutoff(current)}</span>
+      </span>
       <button
         type="button"
-        className="px-3 py-1 text-sm border rounded hover:bg-zinc-100"
+        className="px-3 py-1 text-sm text-accent border border-border rounded bg-surface hover:bg-paper"
         onClick={onChangePicker}
       >
         Change

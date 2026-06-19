@@ -37,12 +37,12 @@ export default function EntityView({ seriesId, entityId }: EntityViewProps) {
   if (cutoff === null) {
     return (
       <main className="max-w-2xl mx-auto p-4">
-        <p className="text-sm text-zinc-600 mb-3">
+        <p className="text-sm text-muted mb-3">
           You haven&apos;t set your reading position yet. Set it to view entity details without spoilers.
         </p>
         <Link
           href={"/" + seriesId + "/"}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-accent hover:underline"
         >
           Set your reading position for this series →
         </Link>
@@ -55,7 +55,7 @@ export default function EntityView({ seriesId, entityId }: EntityViewProps) {
   if (loading) {
     return (
       <main className="max-w-2xl mx-auto p-4">
-        <p className="text-sm text-zinc-500">Loading…</p>
+        <p className="text-sm text-muted">Loading…</p>
       </main>
     );
   }
@@ -72,12 +72,12 @@ export default function EntityView({ seriesId, entityId }: EntityViewProps) {
   if (!entity) {
     return (
       <main className="max-w-2xl mx-auto p-4">
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted">
           This character hasn&apos;t appeared yet at your reading position.
         </p>
         <Link
           href={"/" + seriesId + "/"}
-          className="mt-3 inline-block text-sm text-blue-600 hover:underline"
+          className="mt-3 inline-block text-sm text-accent hover:underline"
         >
           ← Back to entity list
         </Link>
@@ -95,7 +95,7 @@ export default function EntityView({ seriesId, entityId }: EntityViewProps) {
       <div className="max-w-2xl mx-auto px-4 pt-4">
         <Link
           href={"/" + seriesId + "/"}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-accent hover:underline"
         >
           ← Back to entity list
         </Link>

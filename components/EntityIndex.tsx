@@ -18,6 +18,13 @@ function matchesSearch(e: RegistryEntity, q: string): boolean {
   return e.aliases.some((a) => a.toLowerCase().includes(lower));
 }
 
+function sigClass(sig: Significance): string {
+  if (sig === "major" || sig === "supporting") {
+    return "bg-accent text-accent-ink font-mono text-xs px-2 py-0.5 rounded";
+  }
+  return "border border-tag-border text-tag-ink font-mono text-xs px-2 py-0.5 rounded";
+}
+
 export function EntityIndex({ entities, seriesId }: EntityIndexProps) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<EntityType | "">("");
@@ -52,12 +59,12 @@ export function EntityIndex({ entities, seriesId }: EntityIndexProps) {
         <input
           type="search"
           placeholder="Search entities…"
-          className="border rounded px-2 py-1 text-sm flex-1 min-w-40"
+          className="bg-surface border border-border rounded px-2 py-1 text-sm text-ink flex-1 min-w-40"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
-          className="border rounded px-2 py-1 text-sm"
+          className="bg-surface border border-border rounded px-2 py-1 text-sm text-ink"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value as EntityType | "")}
         >
@@ -67,7 +74,7 @@ export function EntityIndex({ entities, seriesId }: EntityIndexProps) {
           ))}
         </select>
         <select
-          className="border rounded px-2 py-1 text-sm"
+          className="bg-surface border border-border rounded px-2 py-1 text-sm text-ink"
           value={sigFilter}
           onChange={(e) => setSigFilter(e.target.value as Significance | "")}
         >
@@ -78,7 +85,7 @@ export function EntityIndex({ entities, seriesId }: EntityIndexProps) {
           <option value="mentioned">mentioned</option>
         </select>
         <select
-          className="border rounded px-2 py-1 text-sm"
+          className="bg-surface border border-border rounded px-2 py-1 text-sm text-ink"
           value={tagFilter}
           onChange={(e) => setTagFilter(e.target.value as EntityTag | "")}
         >
@@ -88,17 +95,17 @@ export function EntityIndex({ entities, seriesId }: EntityIndexProps) {
           ))}
         </select>
       </div>
-      <p className="text-xs text-zinc-500">{filtered.length} entities</p>
-      <ul className="flex flex-col divide-y">
+      <p className="text-xs text-muted">{filtered.length} entities</p>
+      <ul className="flex flex-col gap-2">
         {filtered.map((e) => (
           <li key={e.id}>
             <Link
               href={"/" + seriesId + "/entity/" + e.id + "/"}
-              className="flex items-center gap-3 py-2 hover:bg-zinc-50 px-1 text-sm"
+              className="flex items-center gap-3 py-2 px-3 bg-surface border border-border shadow-[2px_3px_0_rgba(60,48,28,.12)] rounded hover:shadow-[3px_4px_0_rgba(60,48,28,.18)] transition-shadow text-sm"
             >
-              <span className="font-medium flex-1">{e.canonicalName}</span>
-              <span className="text-zinc-400">{e.type}</span>
-              <span className="text-zinc-400">{e.significance}</span>
+              <span className="font-mono text-ink flex-1">{e.canonicalName}</span>
+              <span className="border border-tag-border text-tag-ink text-xs px-2 py-0.5 rounded">{e.type}</span>
+              <span className={sigClass(e.significance)}>{e.significance}</span>
             </Link>
           </li>
         ))}
