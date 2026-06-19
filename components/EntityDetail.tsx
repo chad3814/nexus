@@ -1,12 +1,13 @@
 "use client";
 
-import { anchorSortKey, normalizeAnchor } from "@/lib/gating";
-import type { Cutoff, DescriptionEvent, RegistryEntity } from "@/lib/types";
+import { anchorSortKey, buildSectionOrder, normalizeAnchor } from "@/lib/gating";
+import type { BookSections, Cutoff, DescriptionEvent, RegistryEntity } from "@/lib/types";
 
 interface EntityDetailProps {
   entity: RegistryEntity;
   versions: DescriptionEvent[];
   cutoff: Cutoff;
+  books?: BookSections[];
 }
 
 /** Extract the "B·label" part (e.g. "B1·C3") from a full anchor. */
@@ -15,11 +16,13 @@ function bookChapter(anchor: string): string {
   return `${parts[0] ?? ""}·${parts[1] ?? ""}`;
 }
 
-/** Sort comparator for anchor strings using anchorSortKey. */
-function cmpAnchorStr(a: string, b: string): number {
-  const ka = anchorSortKey(a);
-  const kb = anchorSortKey(b);
-  return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
+/** Sort comparator for anchor strings using anchorSortKey. Closes over `order` when called. */
+function makeCmpAnchorStr(order: ReturnType<typeof buildSectionOrder>) {
+  return function cmpAnchorStr(a: string, b: string): number {
+    const ka = anchorSortKey(a, order);
+    const kb = anchorSortKey(b, order);
+    return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
+  };
 }
 
 function sigClass(sig: string): string {
@@ -29,7 +32,10 @@ function sigClass(sig: string): string {
   return "border border-tag-border text-tag-ink font-mono text-xs px-2 py-0.5 rounded";
 }
 
-export default function EntityDetail({ entity, versions, cutoff }: EntityDetailProps) {
+export default function EntityDetail({ entity, versions, cutoff, books }: EntityDetailProps) {
+  const order = buildSectionOrder(books);
+  const cmpAnchorStr = makeCmpAnchorStr(order);
+
   // Group appearances by "B·label" in reading order
   const sortedAppearances = [...entity.appearances].sort(cmpAnchorStr);
 

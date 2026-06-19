@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { DescriptionEvent, RegistryEntity } from "@/lib/types";
+import type { BookSections, DescriptionEvent, RegistryEntity } from "@/lib/types";
 
 // EntityDetail is a pure presentational component — no mocks needed.
 
@@ -96,5 +96,23 @@ describe("EntityDetail", () => {
     // Pass only the 2 in-cutoff versions (EntityView filters before passing)
     render(<EntityDetail entity={entity} versions={versions.slice(0, 2)} cutoff={cutoff} />);
     expect(screen.queryByText(/SPOILER: post-B2 description/)).not.toBeInTheDocument();
+  });
+});
+
+describe("EntityDetail appearance order", () => {
+  it("orders Interlude-2 before C2 when books are supplied", async () => {
+    const { default: EntityDetail } = await import("@/components/EntityDetail");
+    const orderEntity: RegistryEntity = {
+      id: "x", canonicalName: "X", aliases: [], type: "person", tags: [], significance: "minor",
+      description: "", firstAppearance: null, appearances: ["B8·C2·¶1", "B8·Interlude-2·¶1"],
+    };
+    const books: BookSections[] = [{ number: 8, sections: ["Interlude-2", "C2"] }];
+    render(<EntityDetail entity={orderEntity} versions={[]} cutoff="" books={books} />);
+    // Each group renders a label <p> (exact label) and an anchors <p> (anchor with ¶).
+    // getByText with exact:true finds the unique group-label element for each section.
+    const interludeEl = screen.getByText("B8·Interlude-2");
+    const c2El = screen.getByText("B8·C2");
+    // Node.DOCUMENT_POSITION_FOLLOWING (4) means c2El comes after interludeEl in document order
+    expect(interludeEl.compareDocumentPosition(c2El) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

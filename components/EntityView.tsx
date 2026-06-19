@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { parseCutoff, throughOf, readPosition } from "@/lib/position";
 import { loadSeries } from "@/lib/data";
-import { viewAt, withinCutoff } from "@/lib/gating";
+import { buildSectionOrder, viewAt, withinCutoff } from "@/lib/gating";
 import EntityDetail from "@/components/EntityDetail";
 import type { Cutoff } from "@/lib/types";
 import type { SeriesData } from "@/lib/data";
@@ -60,6 +60,8 @@ export default function EntityView({ seriesId, entityId }: EntityViewProps) {
     );
   }
 
+  const order = buildSectionOrder(data.registry.books);
+
   const view = viewAt(data.registry, {
     through: throughOf(cutoff),
     descriptions: data.descriptions,
@@ -87,7 +89,7 @@ export default function EntityView({ seriesId, entityId }: EntityViewProps) {
 
   // Filter description versions to those ≤ cutoff
   const versions = data.descriptions.filter(
-    (d) => d.id === entityId && withinCutoff(d.anchor, throughOf(cutoff)),
+    (d) => d.id === entityId && withinCutoff(d.anchor, throughOf(cutoff), order),
   );
 
   return (
@@ -100,7 +102,7 @@ export default function EntityView({ seriesId, entityId }: EntityViewProps) {
           ← Back to entity list
         </Link>
       </div>
-      <EntityDetail entity={entity} versions={versions} cutoff={cutoff} />
+      <EntityDetail entity={entity} versions={versions} cutoff={cutoff} books={data.registry.books} />
     </main>
   );
 }
