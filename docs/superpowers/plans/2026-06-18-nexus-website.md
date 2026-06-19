@@ -633,7 +633,51 @@ describe("SeriesPicker", () => {
 
 **Files:** Create `.github/workflows/deploy.yml`, `playwright.config.ts`, `e2e/smoke.spec.ts`.
 
-- [ ] **Step 1: Deploy workflow.** `.github/workflows/deploy.yml`: on push to `main`, job: checkout (with `submodules: false`), checkout `casefiles` is NOT available in CI (private) — so **commit the built `public/data` into the workflow via a repository secret path is out of scope**; instead the workflow expects `public/data` to be produced from a committed data snapshot. **Decision:** for CI, the workflow runs `npm ci`, then `npm run sync-data` requires casefiles. Since casefiles is private and not in CI, the deploy workflow instead consumes data committed to a **`data` branch** or an artifact. To keep it simple and unblock launch: the workflow checks out a sibling private `casefiles` via a deploy key secret `CASEFILES_DEPLOY_KEY`, runs `sync-data`, `next build`, and deploys `out/` with `actions/deploy-pages`. Steps: setup-node 20, `npm ci`, `git clone` casefiles using the SSH deploy key into `../casefiles`, `npm run sync-data`, `npm run export`, upload `out/` artifact, deploy to Pages. Configure `pages: write` + `id-token: write` permissions and the `github-pages` environment.
+- [ ] **Step 1: Deploy workflow.** Create `.github/workflows/deploy.yml`. The data is NOT in the repo; CI clones the private `casefiles` read-only via an SSH deploy key (private key stored as the nexus repo secret `CASEFILES_DEPLOY_KEY`), runs `sync-data`, builds the static export, and deploys `out/` to Pages. The clone is shallow + non-recursive (only `casefiles`' own data files are needed; its `dossier` submodule is not):
+
+```yaml
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.CASEFILES_DEPLOY_KEY }}
+      - name: Clone casefiles data (read-only deploy key)
+        run: git clone --depth 1 git@github.com:chad3814/casefiles.git ../casefiles
+      - name: Sync data
+        run: npm run sync-data
+        env:
+          CASEFILES_DIR: ../casefiles
+      - run: npm run export
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+      - id: deploy
+        uses: actions/deploy-pages@v4
+```
 
 - [ ] **Step 2: Playwright smoke.** `npm i -D @playwright/test && npx playwright install --with-deps chromium`. `playwright.config.ts`: `webServer` runs `npx serve out -l 4321` after `npm run sync-data && npm run export`, `baseURL: http://localhost:4321`. `e2e/smoke.spec.ts`:
   - visit `/dcc/` → expect "Where are you" visible, expect no link to `/dcc/entity/`.
