@@ -4,5 +4,10 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [react()],
   test: { environment: "jsdom", setupFiles: ["./vitest.setup.ts"], globals: true, passWithNoTests: true },
-  resolve: { alias: { "@": new URL(".", import.meta.url).pathname } },
+  resolve: {
+    alias: {
+      "@": new URL(".", import.meta.url).pathname,
+      "next/link": new URL("./test/__mocks__/next-link.tsx", import.meta.url).pathname,
+    },
+  },
 });
