@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
@@ -21,6 +21,18 @@ const sourceSerif = Source_Serif_4({
 export const metadata: Metadata = {
   title: "nexus",
   description: "Character compendiums for Dungeon Crawler Carl",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2B241B",
 };
 
 export default function RootLayout({
