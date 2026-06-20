@@ -126,6 +126,75 @@ describe("EntityDetail cross-links", () => {
     render(<EntityDetail entity={subject} versions={versions} cutoff="" books={[]} entities={entities} seriesId="dcc" />);
     expect(screen.queryByRole("link", { name: "Donut" })).toBeNull();
   });
+
+  it("does not link a minor-significance entity even when its name appears in the description", () => {
+    // "Faraway" is minor; including it in the description should leave it as plain text.
+    // "Carl" is major and IS linked — proving linkify is active and the gap is significance-gating.
+    const subjectWithFaraway = {
+      ...subject,
+      description: "Donut trusts Carl completely and once met Faraway.",
+    };
+    const versionsWithFaraway: DescriptionEvent[] = [
+      {
+        id: "donut",
+        anchor: "B1·C1·¶1",
+        description: "Donut trusts Carl completely and once met Faraway.",
+        significance: "major" as const,
+      },
+    ];
+    render(
+      <EntityDetail
+        entity={subjectWithFaraway}
+        versions={versionsWithFaraway}
+        cutoff=""
+        books={[]}
+        entities={entities}
+        seriesId="dcc"
+      />,
+    );
+    // Carl (major) must be linked — proves linkify ran.
+    expect(screen.getByRole("link", { name: "Carl" })).toHaveAttribute("href", "/dcc/entity/carl/");
+    // Faraway (minor) must NOT be linked.
+    expect(screen.queryByRole("link", { name: "Faraway" })).toBeNull();
+  });
+
+  it("does not link the subject to its own page even when subject is included in entities and name appears in description", () => {
+    // Subject "Donut" is in `entities` (first element) AND its canonicalName appears
+    // in the description. linkCandidates must exclude it by self-id, not just by absence.
+    // We give Donut major significance so it would be linked if it were any other entity.
+    const majorSubject: RegistryEntity = {
+      ...subject,
+      significance: "major",
+      description: "Donut trusts Carl completely.",
+    };
+    const entitiesWithMajorDonut: RegistryEntity[] = [
+      majorSubject,
+      { ...mk("carl", "Carl", ["B1·C1·¶3"]), significance: "major" as const },
+      mk("far", "Faraway", ["B5·C1·¶1"]),
+    ];
+    const versionsForMajor: DescriptionEvent[] = [
+      {
+        id: "donut",
+        anchor: "B1·C1·¶1",
+        description: "Donut trusts Carl completely.",
+        significance: "major" as const,
+      },
+    ];
+    render(
+      <EntityDetail
+        entity={majorSubject}
+        versions={versionsForMajor}
+        cutoff=""
+        books={[]}
+        entities={entitiesWithMajorDonut}
+        seriesId="dcc"
+      />,
+    );
+    // Carl is linked — linkify is working.
+    expect(screen.getByRole("link", { name: "Carl" })).toHaveAttribute("href", "/dcc/entity/carl/");
+    // Donut is the subject — must never link to itself regardless of significance.
+    expect(screen.queryByRole("link", { name: "Donut" })).toBeNull();
+  });
 });
 
 describe("EntityDetail appearance order", () => {
