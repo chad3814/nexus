@@ -2,14 +2,15 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import type { EntityType, RegistryEntity, Significance, EntityTag } from "@/lib/types";
+import type { EntityType, RegistryEntity, Significance, EntityTag, Cutoff } from "@/lib/types";
+import { compareEntities, dirLabel, SORT_KEYS, buildChapterIndex, cutoffChapterIndex, type SortKey } from "@/lib/entity-sort";
 
 interface EntityIndexProps {
   entities: RegistryEntity[];
   seriesId: string;
+  cutoff: Cutoff;
+  books: Array<{ number: number; chapters: string[] }>;
 }
-
-const SIG_RANK: Record<Significance, number> = { major: 0, supporting: 1, minor: 2, mentioned: 3 };
 
 function matchesSearch(e: RegistryEntity, q: string): boolean {
   if (!q) return true;
@@ -25,11 +26,13 @@ function sigClass(sig: Significance): string {
   return "border border-tag-border text-tag-ink font-mono text-xs px-2 py-0.5 rounded";
 }
 
-export function EntityIndex({ entities, seriesId }: EntityIndexProps) {
+export function EntityIndex({ entities, seriesId, cutoff, books }: EntityIndexProps) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<EntityType | "">("");
   const [sigFilter, setSigFilter] = useState<Significance | "">("");
   const [tagFilter, setTagFilter] = useState<EntityTag | "">("");
+  const [sortKey, setSortKey] = useState<SortKey>("relevance");
+  const [dirPrimary, setDirPrimary] = useState(true);
 
   const types = useMemo(
     () => [...new Set(entities.map((e) => e.type))].sort() as EntityType[],
@@ -40,18 +43,17 @@ export function EntityIndex({ entities, seriesId }: EntityIndexProps) {
     [entities],
   );
 
+  const chapterIndex = useMemo(() => buildChapterIndex(books), [books]);
+  const cutoffIdx = useMemo(() => cutoffChapterIndex(cutoff, chapterIndex), [cutoff, chapterIndex]);
+
   const filtered = useMemo(() => {
     return entities
       .filter((e) => matchesSearch(e, search))
       .filter((e) => !typeFilter || e.type === typeFilter)
       .filter((e) => !sigFilter || e.significance === sigFilter)
       .filter((e) => !tagFilter || e.tags.includes(tagFilter))
-      .sort((a, b) => {
-        const sr = SIG_RANK[a.significance] - SIG_RANK[b.significance];
-        if (sr !== 0) return sr;
-        return a.canonicalName.localeCompare(b.canonicalName);
-      });
-  }, [entities, search, typeFilter, sigFilter, tagFilter]);
+      .sort((a, b) => compareEntities(a, b, sortKey, dirPrimary, { chapterIndex, cutoffIdx }));
+  }, [entities, search, typeFilter, sigFilter, tagFilter, sortKey, dirPrimary, chapterIndex, cutoffIdx]);
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -94,6 +96,22 @@ export function EntityIndex({ entities, seriesId }: EntityIndexProps) {
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
+        <select
+          aria-label="Sort"
+          className="bg-surface border border-border rounded px-2 py-1 text-sm text-ink"
+          value={sortKey}
+          onChange={(ev) => { setSortKey(ev.target.value as SortKey); setDirPrimary(true); }}
+        >
+          {SORT_KEYS.map((s) => (<option key={s.key} value={s.key}>{s.label}</option>))}
+        </select>
+        <button
+          type="button"
+          aria-label="Toggle direction"
+          className="bg-surface border border-border rounded px-2 py-1 text-sm text-accent"
+          onClick={() => setDirPrimary((p) => !p)}
+        >
+          {dirLabel(sortKey, dirPrimary)}
+        </button>
       </div>
       <p className="text-xs text-muted">{filtered.length} entities</p>
       <ul className="flex flex-col gap-2">

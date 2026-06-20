@@ -66,7 +66,7 @@ export default function SeriesView({ seriesId, manifest }: SeriesViewProps) {
     <main>
       <PositionBar current={cutoff} books={manifest.books} onChangePicker={() => setShowPicker(true)} />
       {loading && <p className="p-4 text-sm text-muted">Loading…</p>}
-      {view && <EntityIndex entities={view.entities} seriesId={seriesId} />}
+      {view && <EntityIndex entities={view.entities} seriesId={seriesId} cutoff={cutoff} books={manifest.books} />}
     </main>
   );
 }
