@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { anchorSortKey, buildSectionOrder, normalizeAnchor } from "@/lib/gating";
-import { candidatesInChapter, chapterOf, linkify } from "@/lib/links";
+import { linkCandidates, linkify } from "@/lib/links";
 import type { BookSections, Cutoff, DescriptionEvent, RegistryEntity } from "@/lib/types";
 
 interface EntityDetailProps {
@@ -59,9 +59,7 @@ export default function EntityDetail({ entity, versions, cutoff, books, entities
   // Sort versions chronologically for display
   const sortedVersions = [...versions].sort((a, b) => cmpAnchorStr(a.anchor, b.anchor));
 
-  const latestVersion = sortedVersions[sortedVersions.length - 1];
-  const descChapter = latestVersion ? chapterOf(latestVersion.anchor) : "";
-  const descCandidates = descChapter ? candidatesInChapter(entities, descChapter, entity.id) : [];
+  const descCandidates = linkCandidates(entities, entity.id);
   const descSegments = linkify(entity.description, descCandidates, seriesId);
 
   return (

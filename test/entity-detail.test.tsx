@@ -110,7 +110,11 @@ describe("EntityDetail cross-links", () => {
   const versions: DescriptionEvent[] = [
     { id: "donut", anchor: "B1·C1·¶1", description: "Donut trusts Carl completely.", significance: "major" },
   ];
-  const entities = [subject, mk("carl", "Carl", ["B1·C1·¶3"]), mk("far", "Faraway", ["B5·C1·¶1"])];
+  const entities = [
+    subject,
+    { ...mk("carl", "Carl", ["B1·C1·¶3"]), significance: "major" as const },
+    mk("far", "Faraway", ["B5·C1·¶1"]),
+  ];
 
   it("links a co-located mentioned entity to its page", () => {
     render(<EntityDetail entity={subject} versions={versions} cutoff="" books={[]} entities={entities} seriesId="dcc" />);

@@ -1,33 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { candidatesInChapter, chapterOf, linkify } from "@/lib/links";
+import { linkCandidates, linkify } from "@/lib/links";
 import type { RegistryEntity } from "@/lib/types";
 
-const ent = (id: string, canonicalName: string, aliases: string[], appearances: string[]): RegistryEntity => ({
-  id, canonicalName, aliases, type: "person", tags: [], significance: "minor",
-  description: "", firstAppearance: null, appearances,
+const ent = (id: string, name: string, sig: RegistryEntity["significance"], aliases: string[]): RegistryEntity => ({
+  id, canonicalName: name, aliases, type: "person", tags: [], significance: sig,
+  description: "", firstAppearance: null, appearances: [],
 });
 
-describe("chapterOf", () => {
-  it("returns the B·label prefix", () => {
-    expect(chapterOf("B3·C5·¶7")).toBe("B3·C5");
-    expect(chapterOf("[B1·Interlude·¶2]")).toBe("B1·Interlude");
-  });
-});
-
-describe("candidatesInChapter", () => {
+describe("linkCandidates", () => {
   const entities = [
-    ent("self", "Donut", [], ["B1·C1·¶1"]),
-    ent("carl", "Carl", ["the cat"], ["B1·C1·¶3", "B2·C1·¶1"]),
-    ent("mord", "Mordecai", [], ["B2·C4·¶1"]),
+    ent("donut", "Donut", "major", ["the Princess", "Princess"]),
+    ent("pp", "Princess Posse", "supporting", ["The Princess Posse"]),
+    ent("noflex", "Epitome Noflex", "minor", ["the mother"]),
+    ent("self", "Self", "major", []),
   ];
-  it("returns in-chapter entities except self, with canonical + cleaned aliases", () => {
-    const c = candidatesInChapter(entities, "B1·C1", "self");
-    expect(c).toEqual([{ id: "carl", names: ["Carl", "the cat"] }]);
+  it("keeps only major/supporting, excludes self", () => {
+    const ids = linkCandidates(entities, "self").map((c) => c.id).sort();
+    expect(ids).toEqual(["donut", "pp"]);
   });
-  it("excludes entities not in the chapter", () => {
-    expect(candidatesInChapter(entities, "B1·C1", "self")).toEqual([
-      { id: "carl", names: ["Carl", "the cat"] },
-    ]);
+  it("includes canonical name + cleaned aliases", () => {
+    const pp = linkCandidates(entities, "self").find((c) => c.id === "pp");
+    expect(pp?.names).toContain("Princess Posse");
+    expect(pp?.names).toContain("The Princess Posse");
+  });
+});
+
+describe("linkify mis-link regression (the Princess Posse)", () => {
+  it("links the full 'the Princess Posse' to princess-posse, not Donut", () => {
+    const cands = [
+      { id: "donut", names: ["the Princess", "Princess"] },
+      { id: "pp", names: ["Princess Posse", "The Princess Posse"] },
+    ];
+    const segs = linkify("It awards all its assets to the Princess Posse.", cands, "dcc");
+    const link = segs.find((s) => "href" in s);
+    expect(link).toEqual({ text: "the Princess Posse", href: "/dcc/entity/pp/" });
+    expect(segs.some((s) => "href" in s && s.href.includes("/donut/"))).toBe(false);
   });
 });
 

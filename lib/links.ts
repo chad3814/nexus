@@ -1,27 +1,17 @@
-import { cleanAliases, normalizeAnchor } from "@/lib/gating";
+import { cleanAliases } from "@/lib/gating";
 import type { RegistryEntity } from "@/lib/types";
-
-/** The "B·label" chapter prefix of a full anchor (e.g. "B3·C5·¶7" → "B3·C5"). */
-export function chapterOf(anchor: string): string {
-  const parts = normalizeAnchor(anchor).split("·");
-  return `${parts[0] ?? ""}·${parts[1] ?? ""}`;
-}
 
 export interface LinkCandidate {
   id: string;
   names: string[];
 }
 
-/** In-view entities (excluding self) appearing in `chapter`, with canonical name + cleaned aliases. */
-export function candidatesInChapter(
-  entities: RegistryEntity[],
-  chapter: string,
-  selfId: string,
-): LinkCandidate[] {
+/** In-view entities (excluding self) worth linking: gated significance major/supporting. */
+export function linkCandidates(entities: RegistryEntity[], selfId: string): LinkCandidate[] {
   const out: LinkCandidate[] = [];
   for (const e of entities) {
     if (e.id === selfId) continue;
-    if (!e.appearances.some((a) => chapterOf(a) === chapter)) continue;
+    if (e.significance !== "major" && e.significance !== "supporting") continue;
     out.push({ id: e.id, names: [e.canonicalName, ...cleanAliases(e.canonicalName, e.aliases)] });
   }
   return out;
