@@ -20,7 +20,7 @@ const sourceSerif = Source_Serif_4({
 
 export const metadata: Metadata = {
   title: "nexus",
-  description: "Character compendiums for Dungeon Crawler Carl",
+  description: "Spoiler-aware character compendiums for book series",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

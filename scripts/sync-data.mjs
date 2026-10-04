@@ -7,11 +7,19 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
 const casefiles = process.env.CASEFILES_DIR ?? join(root, "..", "casefiles");
 
-// Per-series config: where each series' files live under casefiles, + display metadata.
-const SERIES = [
-  { id: "dcc", title: "Dungeon Crawler Carl", author: "Matt Dinniman",
-    registry: "dcc/output/registry.json", descriptions: "dcc/log/descriptions.json", aliases: "dcc/log/aliases.json" },
-];
+// Published series, by casefiles directory id. Display metadata (title, author) comes from each
+// series' own profile, casefiles/<id>/series.json, so it is defined in exactly one place.
+const SERIES_IDS = ["dcc", "hierarchy"];
+
+const SERIES = SERIES_IDS.map((id) => {
+  const profilePath = join(casefiles, id, "series.json");
+  if (!existsSync(profilePath)) throw new Error(`sync-data: missing ${profilePath} (set CASEFILES_DIR?)`);
+  const profile = JSON.parse(readFileSync(profilePath, "utf8"));
+  return {
+    id, title: profile.title, author: profile.author,
+    registry: `${id}/output/registry.json`, descriptions: `${id}/log/descriptions.json`, aliases: `${id}/log/aliases.json`,
+  };
+});
 
 const manifests = [];
 for (const s of SERIES) {
