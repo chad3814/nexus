@@ -9,7 +9,7 @@ const casefiles = process.env.CASEFILES_DIR ?? join(root, "..", "casefiles");
 
 // Published series, by casefiles directory id. Display metadata (title, author) comes from each
 // series' own profile, casefiles/<id>/series.json, so it is defined in exactly one place.
-const SERIES_IDS = ["dcc", "hierarchy"];
+const SERIES_IDS = ["dcc", "hierarchy", "hwfwm"];
 
 const SERIES = SERIES_IDS.map((id) => {
   const profilePath = join(casefiles, id, "series.json");
